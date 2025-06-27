@@ -15,7 +15,10 @@ VIDEO_FILE = "/data/video/1/2025/06/24/H121643.asf"
 # Example 2: Rescale to 640x360 but keep BGR24
 CUSTOM_FILTER_DESCR = "scale_rkrga=w=640:h=360:format=bgr24,hwmap=mode=read,format=bgr24"
 
-# Example 3: Original filter for 1280x720
+# Example 3: Rescale to 640x360 but keep GRAY8
+#CUSTOM_FILTER_DESCR = "scale_rkrga=w=640:h=360:format=grey,hwmap=mode=read,format=grey"
+
+# Example 4: Original filter for 1280x720
 # CUSTOM_FILTER_DESCR = "scale_rkrga=w=1280:h=720:format=bgr24,hwmap=mode=read,format=bgr24"
 
 
@@ -54,7 +57,7 @@ def main():
             # Print frame details
             print(f"Displaying frame {processor.get_frame_id()} "
                   f"(Actual count: {frame_num}) "
-                  f"(Resolution: {np_frame.shape[1]}x{np_frame.shape[0]}, "
+                  f"(Resolution: {np_frame.shape[1]}x{np_frame.shape[0]}x{np_frame.shape[2]}, "
                   f"PTS: {processor.get_last_frame_pts()}, "
                   f"Time: {processor.get_last_frame_time_seconds():.4f}s)")
 

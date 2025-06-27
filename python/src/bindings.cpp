@@ -19,10 +19,6 @@ py::array_t<uint8_t> mat_to_numpy(const cv::Mat &mat) {
                              "array without copying.");
   }
 
-  if (mat.type() != CV_8UC3) {
-    throw std::runtime_error("Unsupported Mat type. Expected CV_8UC3.");
-  }
-
   // Shape of the NumPy array (height, width, channels)
   std::vector<ssize_t> shape = {mat.rows, mat.cols, mat.channels()};
   // Strides (how many bytes to move to get to the next element in each

@@ -47,7 +47,30 @@ bool FFMPEGVideo::isInitialized() const { return initialized; }
 
 // Private helper function to handle a successfully retrieved filtered frame.
 bool FFMPEGVideo::process_retrieved_frame(cv::Mat &output_mat_ref) {
-  output_mat_ref = cv::Mat(filt_frame->height, filt_frame->width, CV_8UC3,
+
+  // Determine the OpenCV matrix type based on the pixel format
+  int cv_type;
+  // Explicitly cast filt_frame->format to AVPixelFormat to resolve the error
+  const AVPixFmtDescriptor *desc =
+      av_pix_fmt_desc_get(static_cast<AVPixelFormat>(filt_frame->format));
+  if (!desc) {
+    std::cerr << "Unknown pixel format: " << filt_frame->format << std::endl;
+    return false;
+  }
+
+  std::cout << "Detected output pixel format: " << desc->name << std::endl;
+
+  if (desc->nb_components == 1) { // Grayscale
+    cv_type = CV_8UC1;
+  } else if (desc->nb_components == 3) { // Color (e.g., BGR24)
+    cv_type = CV_8UC3;
+  } else {
+    std::cerr << "Unsupported number of components for OpenCV conversion: "
+              << desc->nb_components << std::endl;
+    return false;
+  }
+
+  output_mat_ref = cv::Mat(filt_frame->height, filt_frame->width, cv_type,
                            filt_frame->data[0], filt_frame->linesize[0])
                        .clone();
 
@@ -479,7 +502,7 @@ bool FFMPEGVideo::init() {
     return false;
   }
 
-  enum AVPixelFormat pix_fmts[] = {AV_PIX_FMT_BGR24, AV_PIX_FMT_NONE};
+  enum AVPixelFormat pix_fmts[] = {AV_PIX_FMT_NONE};
   ret = av_opt_set_int_list(buffersink_ctx, "pix_fmts", pix_fmts,
                             AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN);
   if (check_error(ret, "Cannot set output pixel format")) {
