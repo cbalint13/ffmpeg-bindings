@@ -16,7 +16,7 @@ VIDEO_FILE = "/data/video/1/2025/06/24/H121643.asf"
 CUSTOM_FILTER_DESCR = "scale_rkrga=w=640:h=360:format=bgr24,hwmap=mode=read,format=bgr24"
 
 # Example 3: Rescale to 640x360 but keep GRAY8
-#CUSTOM_FILTER_DESCR = "scale_rkrga=w=640:h=360:format=grey,hwmap=mode=read,format=grey"
+#CUSTOM_FILTER_DESCR = "scale_rkrga=w=640:h=360:format=gray,hwmap=mode=read,format=gray"
 
 # Example 4: Original filter for 1280x720
 # CUSTOM_FILTER_DESCR = "scale_rkrga=w=1280:h=720:format=bgr24,hwmap=mode=read,format=bgr24"
