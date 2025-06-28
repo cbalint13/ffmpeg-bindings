@@ -1,12 +1,5 @@
 #include "ffmpeg_video.h"
 
-// Helper function definitions
-static std::string av_error_to_string(int errnum) {
-  char err_buf[AV_ERROR_MAX_STRING_SIZE];
-  av_strerror(errnum, err_buf, sizeof(err_buf));
-  return std::string(err_buf);
-}
-
 static bool check_error(int ret, const std::string &msg) {
   if (ret < 0) {
     char errbuf[AV_ERROR_MAX_STRING_SIZE];
@@ -57,9 +50,9 @@ bool FFMPEGVideo::process_retrieved_frame(cv::Mat &output_mat_ref) {
     std::cerr << "Unknown pixel format: " << filt_frame->format << std::endl;
     return false;
   }
-
+#if !NDEBUG
   std::cout << "Detected output pixel format: " << desc->name << std::endl;
-
+#endif
   if (desc->nb_components == 1) { // Grayscale
     cv_type = CV_8UC1;
   } else if (desc->nb_components == 3) { // Color (e.g., BGR24)
@@ -203,8 +196,9 @@ bool FFMPEGVideo::GetNextFrame(cv::Mat &output_mat) {
 
   // --- Final Flushing Logic ---
   if (end_of_input_reached) {
+#if !NDEBUG
     std::cout << "Initiating pipeline flushing..." << std::endl;
-
+#endif
     avcodec_send_packet(dec_ctx, nullptr);
     while (true) {
       ret = avcodec_receive_frame(dec_ctx, frame);
@@ -264,25 +258,30 @@ enum AVPixelFormat
 FFMPEGVideo::get_hw_format(AVCodecContext *ctx,
                            const enum AVPixelFormat *pix_fmts) {
   const enum AVPixelFormat *p;
+#if !NDEBUG
   std::cout << "get_hw_format called. Supported formats by decoder/hw:"
             << std::endl;
   for (p = pix_fmts; *p != AV_PIX_FMT_NONE; p++) {
     std::cout << "- " << av_get_pix_fmt_name(*p) << std::endl;
   }
-
+#endif
   for (p = pix_fmts; *p != AV_PIX_FMT_NONE; p++) {
     if (*p == AV_PIX_FMT_DRM_PRIME) {
+#if !NDEBUG
       std::cout << "Negotiating HW Pixel Format: AV_PIX_FMT_DRM_PRIME for "
                    "decoder output."
                 << std::endl;
+#endif
       return *p;
     }
   }
   for (p = pix_fmts; *p != AV_PIX_FMT_NONE; p++) {
     if (*p == AV_PIX_FMT_NV12) {
+#if !NDEBUG
       std::cout
           << "Negotiating HW Pixel Format: AV_PIX_FMT_NV12 for decoder output."
           << std::endl;
+#endif
       return *p;
     }
   }
@@ -298,21 +297,27 @@ bool FFMPEGVideo::init() {
   int ret = 0;
 
   // --- 1. Open input file and find stream info ---
+#if !NDEBUG
   std::cout << "Opening input file: " << input_filename_ << std::endl;
+#endif
   ret =
       avformat_open_input(&fmt_ctx, input_filename_.c_str(), nullptr, nullptr);
   if (check_error(ret, "Failed to open input file")) {
     return false;
   }
 
+#if !NDEBUG
   std::cout << "Finding stream information..." << std::endl;
+#endif
   ret = avformat_find_stream_info(fmt_ctx, nullptr);
   if (check_error(ret, "Failed to find stream information")) {
     return false;
   }
 
   // Find the first video stream
+#if !NDEBUG
   std::cout << "Finding video stream..." << std::endl;
+#endif
   video_stream_idx =
       av_find_best_stream(fmt_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
   if (video_stream_idx < 0) {
@@ -355,16 +360,18 @@ bool FFMPEGVideo::init() {
               << std::endl;
     return false;
   }
+#if !NDEBUG
   std::cout << "Using hardware device type: "
             << av_hwdevice_get_type_name(hw_type) << std::endl;
-
+#endif
   ret = av_hwdevice_ctx_create(&hw_device_ctx, hw_type, nullptr, nullptr, 0);
   if (check_error(ret, "Failed to create HW device context")) {
     return false;
   }
+#if !NDEBUG
   std::cout << "Successfully created HW device context: " << hw_device_type_name
             << std::endl;
-
+#endif
   // --- 3. Setup Decoder Context ---
   const AVCodec *decoder = avcodec_find_decoder_by_name("hevc_rkmpp");
   if (!decoder) {
@@ -373,8 +380,9 @@ bool FFMPEGVideo::init() {
               << std::endl;
     return false;
   }
+#if !NDEBUG
   std::cout << "Using decoder: " << decoder->name << std::endl;
-
+#endif
   dec_ctx = avcodec_alloc_context3(decoder);
   if (!dec_ctx) {
     std::cerr << "Failed to allocate decoder context." << std::endl;
@@ -393,19 +401,22 @@ bool FFMPEGVideo::init() {
               << std::endl;
     return false;
   }
+#if !NDEBUG
   std::cout << "Hardware device context set for codec context." << std::endl;
-
+#endif
   dec_ctx->get_format = get_hw_format;
+#if !NDEBUG
   std::cout << "Hardware pixel format negotiation callback set." << std::endl;
-
   std::cout << "Opening decoder..." << std::endl;
+#endif
   ret = avcodec_open2(dec_ctx, decoder, nullptr);
   if (check_error(ret, "Failed to open decoder")) {
     return false;
   }
+#if !NDEBUG
   std::cout << "Codec opened successfully. Decoder output pix_fmt: "
             << av_get_pix_fmt_name(dec_ctx->pix_fmt) << std::endl;
-
+#endif
   // --- Manually allocate and initialize hw_frames_ctx ---
   hw_frames_ctx = av_hwframe_ctx_alloc(hw_device_ctx);
   if (!hw_frames_ctx) {
@@ -425,11 +436,12 @@ bool FFMPEGVideo::init() {
   if (check_error(ret, "Failed to initialize AVHWFramesContext")) {
     return false;
   }
+#if !NDEBUG
   std::cout << "Successfully initialized AVHWFramesContext for decoder's "
                "output (format: "
             << av_get_pix_fmt_name(frames_ctx_data->format) << ")."
             << std::endl;
-
+#endif
   av_buffer_unref(&dec_ctx->hw_frames_ctx);
   dec_ctx->hw_frames_ctx = av_buffer_ref(hw_frames_ctx);
   if (!dec_ctx->hw_frames_ctx) {
@@ -438,9 +450,10 @@ bool FFMPEGVideo::init() {
               << std::endl;
     return false;
   }
+#if !NDEBUG
   std::cout << "Assigned explicit hw_frames_ctx to decoder context."
             << std::endl;
-
+#endif
   // --- 4. Setup Filter Graph ---
   filter_graph = avfilter_graph_alloc();
   if (!filter_graph) {
@@ -540,8 +553,9 @@ bool FFMPEGVideo::init() {
     avfilter_inout_free(&inputs);
     return false;
   }
-
+#if !NDEBUG
   std::cout << "Configuring filter graph..." << std::endl;
+#endif
   ret = avfilter_graph_config(filter_graph, nullptr);
   if (check_error(ret, "Failed to configure filter graph")) {
     return false;
@@ -554,7 +568,9 @@ bool FFMPEGVideo::init() {
 }
 
 void FFMPEGVideo::cleanup() {
+#if !NDEBUG
   std::cout << "Cleaning up FFmpeg resources..." << std::endl;
+#endif
   avfilter_graph_free(&filter_graph);
   avcodec_free_context(&dec_ctx);
   avformat_close_input(&fmt_ctx);
@@ -563,5 +579,7 @@ void FFMPEGVideo::cleanup() {
   av_frame_free(&filt_frame);
   av_buffer_unref(&hw_frames_ctx);
   av_buffer_unref(&hw_device_ctx);
+#if !NDEBUG
   std::cout << "FFmpeg resources cleaned up." << std::endl;
+#endif
 }
