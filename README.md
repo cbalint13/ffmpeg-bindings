@@ -9,6 +9,27 @@ These bindings **accelerates** video **decoding** & **scaling** within CV / ML a
 * Implementation of ```C++``` & ```python``` FFMPEG reader bindings using HW acceleration (via ```mpp``` driver).
 * It also rescales and converts to *BGR24/GRAY8* the video frames using HW acceleration (via ```rga``` driver).
 
+### Python binding example
+
+```python
+import ffmpeg_video
+
+vid_filter = "scale_rkrga=w=640:h=360:format=bgr24,hwmap=mode=read,format=bgr24"
+cap = ffmpeg_video.FFMPEGVideo("my_video.mp4", vid_filter)
+
+while True:
+  np_frame = cap.get_next_frame()
+
+  print(f"Displaying frame {cap.get_frame_id()} "
+        f"(Actual count: {frame_num}) "
+        f"(Resolution: {np_frame.shape}, "
+        f"PTS: {cap.get_last_frame_pts()}, "
+        f"Time: {cap.get_last_frame_time_seconds():.4f}s)")
+
+  cv2.imshow("Video Playback (Python)", np_frame)
+  key = cv2.waitKey(0)
+```
+
 ## Building
 * This use custom (rockchip) ffmpeg branch: https://github.com/nyanmisaka/ffmpeg-rockchip/tree/7.1
 * It can be adapted to any other (vanilla avdecode/avfilter) HW accelators or non accelerated scenarios.
