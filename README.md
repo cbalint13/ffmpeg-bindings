@@ -7,7 +7,7 @@ These bindings **accelerates** video **decoding** & **scaling** within CV / ML a
 
 ## Overview
 * Implementation of ```C++``` & ```python``` FFMPEG reader bindings using HW acceleration (via ```mpp``` driver).
-* It also rescales and converts to *BGR24* the video frames using HW acceleration (via ```rga``` driver).
+* It also rescales and converts to *BGR24/GRAY8* the video frames using HW acceleration (via ```rga``` driver).
 
 ## Building
 * This use custom (rockchip) ffmpeg branch: https://github.com/nyanmisaka/ffmpeg-rockchip/tree/7.1
