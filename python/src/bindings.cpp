@@ -12,40 +12,45 @@
 
 namespace py = pybind11;
 
-// Function to convert cv::Mat to py::array_t (NumPy array)
+// Function to convert cv::Mat to py::array_t (NumPy array) by copying data
 py::array_t<uint8_t> mat_to_numpy(const cv::Mat &mat) {
-  if (!mat.isContinuous()) {
-    throw std::runtime_error("Mat is not continuous. Cannot convert to numpy "
-                             "array without copying.");
+  // Ensure the Mat is continuous and of the correct type (CV_8UC1 or CV_8UC3 for BGR24/Grayscale)
+  if (!mat.isContinuous() || mat.depth() != CV_8U || (mat.channels() != 1 && mat.channels() != 3)) {
+      throw std::runtime_error("Unsupported Mat format for numpy conversion. Must be continuous CV_8UC1 or CV_8UC3.");
   }
 
-  // Shape of the NumPy array (height, width, channels)
-  std::vector<ssize_t> shape = {mat.rows, mat.cols, mat.channels()};
-  // Strides (how many bytes to move to get to the next element in each
-  // dimension)
-  std::vector<ssize_t> strides = {
-      static_cast<ssize_t>(mat.step[0]),    // row stride
-      static_cast<ssize_t>(mat.step[1]),    // col stride
-      static_cast<ssize_t>(mat.elemSize1()) // channel stride
-  };
+  // Determine shape and strides based on the number of channels
+  std::vector<ssize_t> shape;
+  std::vector<ssize_t> strides;
 
-  return py::array_t<uint8_t>(
-      shape, strides, mat.data,
-      py::none()); // py::none() for base object means no external ownership
+  if (mat.channels() == 1) { // Grayscale
+      shape = {mat.rows, mat.cols};
+      strides = {static_cast<ssize_t>(mat.step[0]), // row stride
+                 static_cast<ssize_t>(mat.step[1])}; // col stride (pixel stride)
+  } else { // Color (e.g., BGR24)
+      shape = {mat.rows, mat.cols, mat.channels()};
+      strides = {static_cast<ssize_t>(mat.step[0]),    // row stride
+                 static_cast<ssize_t>(mat.step[1]),    // col stride
+                 static_cast<ssize_t>(mat.elemSize1())}; // channel stride
+  }
+
+  // Create a new py::array_t by copying the data
+  // The 'mat.data' pointer is used as the source for the copy.
+  // py::array_t's constructor without the 'owner' argument implies data copying.
+  py::array_t<uint8_t> result_array(shape, strides, mat.data);
+
+  return result_array;
 }
 
 PYBIND11_MODULE(ffmpeg_video, m) {
-  m.doc() =
-      "pybind11 plugin for FFMPEGVideo class with RKMpp hardware acceleration";
+  m.doc() = "pybind11 plugin for FFMPEGVideo class"; // Optional module docstring
 
   py::class_<FFMPEGVideo>(m, "FFMPEGVideo")
-      // Updated constructor binding with a default filter_descr
       .def(py::init<const std::string &, const std::string &>(),
            py::arg("filename"),
-           py::arg("filter_descr") = "scale_rkrga=w=1280:h=720:format=bgr24,"
-                                     "hwmap=mode=read,format=bgr24",
-           "Initializes the FFMPEGVideo processor with the given video "
-           "filename and an optional filter description string.")
+           py::arg("filter_descr_str") = "", // Default empty string
+           "Initializes the FFMPEGVideo processor with a video file and an "
+           "optional filter graph description.")
       .def("is_initialized", &FFMPEGVideo::isInitialized,
            "Checks if the video processor was successfully initialized.")
       .def("get_frame_width", &FFMPEGVideo::get_frame_width,
@@ -74,6 +79,7 @@ PYBIND11_MODULE(ffmpeg_video, m) {
             return py::none(); // Return None if no frame is available (EOF or
                                // error)
           },
-          "Fetches the next processed video frame as a NumPy array. Returns "
-          "None if EOF or error.");
+          "Retrieves the next video frame as a NumPy array (uint8, BGR or "
+          "Grayscale). Returns None if the end of the stream is reached or "
+          "an error occurs.");
 }

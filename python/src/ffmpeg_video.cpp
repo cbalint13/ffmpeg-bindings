@@ -71,8 +71,7 @@ bool FFMPEGVideo::process_retrieved_frame(cv::Mat &output_mat_ref) {
   }
 
   output_mat_ref = cv::Mat(filt_frame->height, filt_frame->width, cv_type,
-                           filt_frame->data[0], filt_frame->linesize[0])
-                       .clone();
+                           filt_frame->data[0], filt_frame->linesize[0]);
 
   if (frame_count_ == 0) { // Only set once for first frame
     frame_width_ = filt_frame->width;
@@ -488,6 +487,10 @@ bool FFMPEGVideo::init() {
     av_free(buffersrc_params);
     return false;
   }
+
+  // Set colorspace and color_range directly from decoder context
+  buffersrc_params->color_space = dec_ctx->colorspace;
+  buffersrc_params->color_range = dec_ctx->color_range;
 
   ret = av_buffersrc_parameters_set(buffersrc_ctx, buffersrc_params);
   if (check_error(ret, "Failed to set parameters on buffersrc")) {
