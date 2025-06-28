@@ -21,7 +21,6 @@ while True:
   np_frame = cap.get_next_frame()
   if np_frame is None: break
   print(f"Displaying frame {cap.get_frame_id()} "
-        f"(Actual count: {frame_num}) "
         f"(Resolution: {np_frame.shape}, "
         f"PTS: {cap.get_last_frame_pts()}, "
         f"Time: {cap.get_last_frame_time_seconds():.4f}s)")
