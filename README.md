@@ -71,3 +71,6 @@ There are readily usable .rpm packages for Fedora:
                               muxing overhead: unknown
   frame=  899 fps=528 q=-0.0 Lsize=N/A time=00:02:59.80 bitrate=N/A speed=75.7x    
   ```
+## TODO
+* WiP: frame seek & positioning (forward/backward) capability
+* WiP: allow advanced filter/resize + transcode to JPEG
