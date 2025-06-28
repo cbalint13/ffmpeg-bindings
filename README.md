@@ -19,7 +19,7 @@ cap = ffmpeg_video.FFMPEGVideo("my_video.mp4", vid_filter)
 
 while True:
   np_frame = cap.get_next_frame()
-
+  if np_frame is None: break
   print(f"Displaying frame {cap.get_frame_id()} "
         f"(Actual count: {frame_num}) "
         f"(Resolution: {np_frame.shape}, "
