@@ -14,9 +14,9 @@ namespace py = pybind11;
 
 // Function to convert cv::Mat to py::array_t (NumPy array) by copying data
 py::array_t<uint8_t> mat_to_numpy(const cv::Mat &mat) {
-  // Ensure the Mat is continuous and of the correct type (CV_8UC1 or CV_8UC3 for BGR24/Grayscale)
-  if (!mat.isContinuous() || mat.depth() != CV_8U || (mat.channels() != 1 && mat.channels() != 3)) {
-      throw std::runtime_error("Unsupported Mat format for numpy conversion. Must be continuous CV_8UC1 or CV_8UC3.");
+  if (!mat.isContinuous() || mat.depth() != CV_8U ||
+      (mat.channels() != 1 && mat.channels() != 3)) {
+    throw std::runtime_error("Unsupported Mat format for numpy conversion.");
   }
 
   // Determine shape and strides based on the number of channels
@@ -24,26 +24,26 @@ py::array_t<uint8_t> mat_to_numpy(const cv::Mat &mat) {
   std::vector<ssize_t> strides;
 
   if (mat.channels() == 1) { // Grayscale
-      shape = {mat.rows, mat.cols};
-      strides = {static_cast<ssize_t>(mat.step[0]), // row stride
-                 static_cast<ssize_t>(mat.step[1])}; // col stride (pixel stride)
-  } else { // Color (e.g., BGR24)
-      shape = {mat.rows, mat.cols, mat.channels()};
-      strides = {static_cast<ssize_t>(mat.step[0]),    // row stride
-                 static_cast<ssize_t>(mat.step[1]),    // col stride
-                 static_cast<ssize_t>(mat.elemSize1())}; // channel stride
+    shape = {mat.rows, mat.cols};
+    strides = {static_cast<ssize_t>(mat.step[0]),  // row stride
+               static_cast<ssize_t>(mat.step[1])}; // col stride (pixel stride)
+  } else {                                         // Color (e.g., BGR24)
+    shape = {mat.rows, mat.cols, mat.channels()};
+    strides = {static_cast<ssize_t>(mat.step[0]),      // row stride
+               static_cast<ssize_t>(mat.step[1]),      // col stride
+               static_cast<ssize_t>(mat.elemSize1())}; // channel stride
   }
 
   // Create a new py::array_t by copying the data
   // The 'mat.data' pointer is used as the source for the copy.
-  // py::array_t's constructor without the 'owner' argument implies data copying.
+  // py::array_t's constructor without the 'owner' argument means copy.
   py::array_t<uint8_t> result_array(shape, strides, mat.data);
 
   return result_array;
 }
 
 PYBIND11_MODULE(ffmpeg_video, m) {
-  m.doc() = "pybind11 plugin for FFMPEGVideo class"; // Optional module docstring
+  m.doc() = "pybind11 plugin for FFMPEGVideo class";
 
   py::class_<FFMPEGVideo>(m, "FFMPEGVideo")
       .def(py::init<const std::string &, const std::string &>(),
