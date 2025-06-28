@@ -52,10 +52,9 @@ public:
         total_frames_(0),                    // Initialize total frames
         frame_width_(0),                     // Initialize output frame width
         frame_height_(0),                    // Initialize output frame height
-        video_time_base_(
-            {0, 1}), // Initialize time base to avoid garbage values
-        current_frame_pts_(AV_NOPTS_VALUE), // Initialize current PTS
-        current_frame_time_seconds_(0.0)    // Initialize current time
+        video_time_base_({0, 1}),            // Initialize time base
+        current_frame_pts_(AV_NOPTS_VALUE),  // Initialize current PTS
+        current_frame_time_seconds_(0.0)     // Initialize current time
   {
     pkt = av_packet_alloc();
     frame = av_frame_alloc();
@@ -648,6 +647,10 @@ private:
       return false;
     }
 
+    // Set colorspace and color_range directly from decoder context
+    buffersrc_params->color_space = dec_ctx->colorspace;
+    buffersrc_params->color_range = dec_ctx->color_range;
+
     ret = av_buffersrc_parameters_set(buffersrc_ctx, buffersrc_params);
     if (check_error(ret, "Failed to set parameters on buffersrc")) {
       av_free(buffersrc_params);
@@ -778,7 +781,7 @@ int main(int argc, char **argv) {
     if ((video_processor.get_frame_id() % 100) == 0) {
       // Display the frame using OpenCV.
       cv::imshow("Video Playback", frame_mat);
-      char key = cv::waitKey(0); // Wait 1ms for key press (allows GUI events).
+      char key = cv::waitKey(0); // Wait for key press (allows GUI events)
       if (key == 'q' || key == 27) { // 'q' key or ESC key to quit.
         std::cout << "User requested exit." << std::endl;
         break;
