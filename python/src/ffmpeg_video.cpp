@@ -334,11 +334,17 @@ bool FFMPEGVideo::init() {
     total_frames_ = fmt_ctx->streams[video_stream_idx]->nb_frames;
   } else if (fmt_ctx->streams[video_stream_idx]->duration != AV_NOPTS_VALUE &&
              fmt_ctx->streams[video_stream_idx]->avg_frame_rate.num > 0) {
-    total_frames_ = static_cast<int>(
-        fmt_ctx->streams[video_stream_idx]->duration *
-        av_q2d(fmt_ctx->streams[video_stream_idx]->avg_frame_rate) / 1000);
-    if (total_frames_ == 0) {
-      std::cerr << "Warning: Total frames could not be accurately determined."
+    // Approximate total frames from duration and average frame rate
+    double duration_seconds =
+        (double)fmt_ctx->streams[video_stream_idx]->duration *
+        av_q2d(video_time_base_);
+    double fps_double =
+        av_q2d(fmt_ctx->streams[video_stream_idx]->avg_frame_rate);
+    total_frames_ = static_cast<int>(duration_seconds * fps_double);
+    if (total_frames_ == 0 &&
+        fmt_ctx->streams[video_stream_idx]->duration > 0) {
+      // If duration-based calculation also yields 0, it means it's unreliable
+      std::cerr << "Total frames calculated as 0 despite positive duration."
                 << std::endl;
     }
   } else {

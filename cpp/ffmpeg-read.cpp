@@ -454,12 +454,16 @@ private:
     } else if (fmt_ctx->streams[video_stream_idx]->duration != AV_NOPTS_VALUE &&
                fmt_ctx->streams[video_stream_idx]->avg_frame_rate.num > 0) {
       // Approximate total frames from duration and average frame rate
-      total_frames_ = static_cast<int>(
-          fmt_ctx->streams[video_stream_idx]->duration *
-          av_q2d(fmt_ctx->streams[video_stream_idx]->avg_frame_rate) / 1000);
-      if (total_frames_ == 0) {
+      double duration_seconds =
+          (double)fmt_ctx->streams[video_stream_idx]->duration *
+          av_q2d(video_time_base_);
+      double fps_double =
+          av_q2d(fmt_ctx->streams[video_stream_idx]->avg_frame_rate);
+      total_frames_ = static_cast<int>(duration_seconds * fps_double);
+      if (total_frames_ == 0 &&
+          fmt_ctx->streams[video_stream_idx]->duration > 0) {
         // If duration-based calculation also yields 0, it means it's unreliable
-        std::cerr << "Warning: Total frames could not be accurately determined."
+        std::cerr << "Total frames calculated as 0 despite positive duration."
                   << std::endl;
       }
     } else {
@@ -781,7 +785,7 @@ int main(int argc, char **argv) {
     if ((video_processor.get_frame_id() % 100) == 0) {
       // Display the frame using OpenCV.
       cv::imshow("Video Playback", frame_mat);
-      char key = cv::waitKey(0); // Wait for key press (allows GUI events)
+      char key = cv::waitKey(0);     // Wait for key press (allows GUI events)
       if (key == 'q' || key == 27) { // 'q' key or ESC key to quit.
         std::cout << "User requested exit." << std::endl;
         break;
