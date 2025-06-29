@@ -31,7 +31,7 @@ while True:
 
 ## Building
 * This use custom (rockchip) ffmpeg branch: https://github.com/nyanmisaka/ffmpeg-rockchip/tree/7.1
-* See advanced usage with dedicated hardware processing: https://github.com/nyanmisaka/ffmpeg-rockchip/wiki
+* See wiki usage with the hardware processing: https://github.com/nyanmisaka/ffmpeg-rockchip/wiki
 * It can be adapted to any other (vanilla avdecode/avfilter) HW accelators or non accelerated scenarios.
 
 There are readily usable .rpm packages for Fedora:
