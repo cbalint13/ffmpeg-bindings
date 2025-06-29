@@ -18,9 +18,9 @@ FFMPEGVideo::FFMPEGVideo(const std::string &filename,
       buffersrc_ctx(nullptr), buffersink_ctx(nullptr), hw_device_ctx(nullptr),
       hw_frames_ctx(nullptr), pkt(nullptr), frame(nullptr), filt_frame(nullptr),
       video_stream_idx(-1), initialized(false), frame_count_(0),
-      total_frames_(0), frame_width_(0), frame_height_(0),
-      video_time_base_({0, 1}), current_frame_pts_(AV_NOPTS_VALUE),
-      current_frame_time_seconds_(0.0) {
+      total_frames_(0), video_width_(0), video_height_(0), frame_width_(0),
+      frame_height_(0), video_time_base_({0, 1}),
+      current_frame_pts_(AV_NOPTS_VALUE), current_frame_time_seconds_(0.0) {
   pkt = av_packet_alloc();
   frame = av_frame_alloc();
   filt_frame = av_frame_alloc();
@@ -242,6 +242,8 @@ bool FFMPEGVideo::GetNextFrame(cv::Mat &output_mat) {
 }
 
 // Getter implementations
+int FFMPEGVideo::get_video_width() const { return video_width_; }
+int FFMPEGVideo::get_video_height() const { return video_height_; }
 int FFMPEGVideo::get_frame_width() const { return frame_width_; }
 int FFMPEGVideo::get_frame_height() const { return frame_height_; }
 int FFMPEGVideo::get_frame_id() const { return frame_count_; }
@@ -400,6 +402,10 @@ bool FFMPEGVideo::init() {
   if (check_error(ret, "Failed to copy codec parameters to decoder context")) {
     return false;
   }
+
+  // Store video dimensions
+  video_width_ = dec_ctx->width;
+  video_height_ = dec_ctx->height;
 
   dec_ctx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
   if (!dec_ctx->hw_device_ctx) {

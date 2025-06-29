@@ -53,6 +53,10 @@ PYBIND11_MODULE(ffmpeg_video, m) {
            "optional filter graph description.")
       .def("is_initialized", &FFMPEGVideo::isInitialized,
            "Checks if the video processor was successfully initialized.")
+      .def("get_video_width", &FFMPEGVideo::get_video_width,
+           "Returns the width of the original video frames.")
+      .def("get_video_height", &FFMPEGVideo::get_video_height,
+           "Returns the height of the original video frames.")
       .def("get_frame_width", &FFMPEGVideo::get_frame_width,
            "Returns the width of the output video frames.")
       .def("get_frame_height", &FFMPEGVideo::get_frame_height,

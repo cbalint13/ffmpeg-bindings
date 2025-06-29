@@ -37,6 +37,7 @@ def main():
             return
 
         print("\n--- Video Processor Initialized ---")
+        print(f"Video resolution: {processor.get_video_width()}x{processor.get_video_height()}")
         print(f"Output Frame Resolution: {processor.get_frame_width()}x{processor.get_frame_height()}")
         print(f"Estimated Total Frames: {processor.get_frame_total()}")
         print("-----------------------------------\n")

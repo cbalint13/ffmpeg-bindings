@@ -22,13 +22,6 @@ extern "C" {
 #include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
 
-// Helper function to get FFmpeg error strings
-std::string av_error_to_string(int errnum) {
-  char err_buf[AV_ERROR_MAX_STRING_SIZE];
-  av_strerror(errnum, err_buf, sizeof(err_buf));
-  return std::string(err_buf);
-}
-
 // Function to handle FFmpeg errors
 static bool check_error(int ret, const std::string &msg) {
   if (ret < 0) {
@@ -50,6 +43,8 @@ public:
         frame(nullptr), filt_frame(nullptr), video_stream_idx(-1),
         initialized(false), frame_count_(0), // Initialize frame counter
         total_frames_(0),                    // Initialize total frames
+        video_width_(0),                     // Initialize video frame width
+        video_height_(0),                    // Initialize video frame width
         frame_width_(0),                     // Initialize output frame width
         frame_height_(0),                    // Initialize output frame height
         video_time_base_({0, 1}),            // Initialize time base
@@ -293,6 +288,10 @@ public:
   }
 
   // New getter methods
+  int get_video_width() const { return video_width_; }
+
+  int get_video_height() const { return video_height_; }
+
   int get_frame_width() const { return frame_width_; }
 
   int get_frame_height() const { return frame_height_; }
@@ -328,6 +327,8 @@ private:
 
   int frame_count_;  // Counter for frames processed so far (starting from 1)
   int total_frames_; // Total frames in the video (approximation)
+  int video_width_;  // Width of the video frames
+  int video_height_; // Height of the video frames
   int frame_width_;  // Width of the output frames
   int frame_height_; // Height of the output frames
   AVRational video_time_base_; // Time base of the video stream
@@ -519,6 +520,13 @@ private:
                     "Failed to copy codec parameters to decoder context")) {
       return false;
     }
+
+    // Store original video dimensions
+    video_width_ = dec_ctx->width;
+    video_height_ = dec_ctx->height;
+
+    std::cout << "Video dimensions: " << video_width_ << "x" << video_height_
+              << std::endl;
 
     // Assign the HW device context to the decoder context.
     // This is necessary for the decoder to utilize the hardware device.

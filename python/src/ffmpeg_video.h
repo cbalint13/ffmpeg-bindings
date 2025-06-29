@@ -38,6 +38,8 @@ public:
   bool GetNextFrame(cv::Mat &output_mat);
 
   // Getter methods
+  int get_video_width() const;
+  int get_video_height() const;
   int get_frame_width() const;
   int get_frame_height() const;
   int get_frame_id() const;
@@ -64,6 +66,8 @@ private:
 
   int frame_count_;
   int total_frames_;
+  int video_width_;
+  int video_height_;
   int frame_width_;
   int frame_height_;
   AVRational video_time_base_;
