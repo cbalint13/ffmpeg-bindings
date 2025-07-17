@@ -491,7 +491,19 @@ private:
               << av_hwdevice_get_type_name(hw_type) << std::endl;
 
     // Create HW device context
-    ret = av_hwdevice_ctx_create(&hw_device_ctx, hw_type, nullptr, nullptr, 0);
+    AVDictionary *hw_device_opts = nullptr;
+    // Set 'afbc' as a device option for RKMPP.
+    int ret_dict_set = av_dict_set(&hw_device_opts, "afbc", "1", 0);
+    if (ret_dict_set < 0) {
+      std::cerr << "Failed to set 'afbc' option in device dictionary: "
+                << av_err2str(ret_dict_set) << std::endl;
+      return false;
+    }
+
+    ret = av_hwdevice_ctx_create(&hw_device_ctx, hw_type, nullptr,
+                                 hw_device_opts, 0);
+    av_dict_free(&hw_device_opts); // Free the dictionary after use
+
     if (check_error(ret, "Failed to create HW device context")) {
       return false;
     }
